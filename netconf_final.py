@@ -14,8 +14,8 @@ def create(studentID):
 
     current_status = status(interface_name)
     if current_status == "up" or current_status == "down":
-        print("Cannot create: Interface loopback {studentID}  (already exists)")
-        return "Cannot create: Interface loopback {studentID} "
+        print(f"Cannot create: Interface loopback {studentID}  (already exists)")
+        return f"Cannot create: Interface loopback {studentID} "
     
     last_three_digits = studentID[-3:]
     x = int(last_three_digits[0])
@@ -48,8 +48,8 @@ def create(studentID):
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback {studentID}  is created successfully")
-            return "Interface loopback {studentID}  is created successfully"
+            print(f"Interface loopback {studentID}  is created successfully")
+            return f"Interface loopback {studentID}  is created successfully"
     except:
         print("Cannot create: Interface loopback {studentID} ")
 
@@ -59,8 +59,8 @@ def delete(studentID):
 
     current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot delete: Interface loopback {studentID} (does not exist)")
-        return "Cannot delete: Interface loopback {studentID} "
+        print(f"Cannot delete: Interface loopback {studentID} (does not exist)")
+        return f"Cannot delete: Interface loopback {studentID} "
     
     netconf_config = f"""
     <config>
@@ -79,8 +79,8 @@ def delete(studentID):
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback {studentID}  is deleted successfully")
-            return "Interface loopback {studentID}  is deleted successfully"
+            print(f"Interface loopback {studentID}  is deleted successfully")
+            return f"Interface loopback {studentID}  is deleted successfully"
     except:
         print("Error!")
 
@@ -90,8 +90,12 @@ def enable(studentID):
 
     current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot enable: Interface loopback {studentID} (does not exist)")
-        return "Cannot enable: Interface loopback {studentID}"
+        print(f"Cannot enable: Interface loopback {studentID} (does not exist)")
+        return f"Cannot enable: Interface loopback {studentID}"
+    
+    if current_status == "up":
+        print(f"Interface loopback {studentID} is enabled successfully")
+        return f"Interface loopback {studentID} is enabled successfully"
     
     netconf_config = f"""
     <config>
@@ -111,10 +115,10 @@ def enable(studentID):
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback {studentID} is enabled successfully")
-            return "Interface loopback {studentID} is enabled successfully"
-    except:
-        print("Error!")
+            print(f"Interface loopback {studentID} is enabled successfully")
+            return f"Interface loopback {studentID} is enabled successfully"
+    except Exception as e:
+        print(e)
 
 
 def disable(studentID):
@@ -122,8 +126,8 @@ def disable(studentID):
 
     current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot shutdown: Interface loopback {studentID} (does not exist)")
-        return "Cannot shutdown: Interface loopback {studentID}"
+        print(f"Cannot shutdown: Interface loopback {studentID} (does not exist)")
+        return f"Cannot shutdown: Interface loopback {studentID}"
     
     netconf_config = f"""
     <config>
@@ -143,8 +147,8 @@ def disable(studentID):
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback {studentID} is shutdowned successfully")
-            return "Interface loopback {studentID} is shutdowned successfully"
+            print(f"Interface loopback {studentID} is shutdowned successfully")
+            return f"Interface loopback {studentID} is shutdowned successfully"
     except:
         print("Error!")
 
