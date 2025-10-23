@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import netconf_final
 import netmiko_final
+import ansible_final
 
 #######################################################################################
 # 2. Assign the Webex access token to the variable ACCESS_TOKEN using environment variables.
@@ -31,13 +32,13 @@ if ACCESS_TOKEN is None:
 # 3. Prepare parameters get the latest message for messages API.
 
 # Defines a variable that will hold the roomId
-# roomIdToGetMessages = (
-#     "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vYmQwODczMTAtNmMyNi0xMWYwLWE1MWMtNzkzZDM2ZjZjM2Zm"
-# )
-
 roomIdToGetMessages = (
-    "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vZjBmMzdkZTAtYjAxMC0xMWYwLTgxNmEtYmZkNWZkODQzYjgw"
+    "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vYmQwODczMTAtNmMyNi0xMWYwLWE1MWMtNzkzZDM2ZjZjM2Zm"
 )
+
+# roomIdToGetMessages = (
+#     "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vZjBmMzdkZTAtYjAxMC0xMWYwLTgxNmEtYmZkNWZkODQzYjgw"
+# )
 
 last_message_id = None
 
@@ -122,25 +123,26 @@ while True:
         elif command == "gigabit_status":
             responseMessage = netmiko_final.gigabit_status()
         elif command == "showrun":
-            try:
-                # 1. เรียกใช้ connection 'm' จาก netconf_final
-                config_reply = netconf_final.m.get_config(source="running")
+            responseMessage = ansible_final.showrun(studentID)
+            # try:
+            #     # 1. เรียกใช้ connection 'm' จาก netconf_final
+            #     config_reply = netconf_final.m.get_config(source="running")
                 
-                # 2. จัดรูปแบบ XML ให้สวยงาม (Pretty Print)
-                xml_data = xml.dom.minidom.parseString(config_reply.xml)
-                pretty_xml = xml_data.toprettyxml(indent="  ")
+            #     # 2. จัดรูปแบบ XML ให้สวยงาม (Pretty Print)
+            #     xml_data = xml.dom.minidom.parseString(config_reply.xml)
+            #     pretty_xml = xml_data.toprettyxml(indent="  ")
                 
-                # 3. บันทึกลงไฟล์
-                filename = "running_config.txt"
-                with open(filename, "w", encoding="utf-8") as f:
-                    f.write(pretty_xml)
+            #     # 3. บันทึกลงไฟล์
+            #     filename = "running_config.txt"
+            #     with open(filename, "w", encoding="utf-8") as f:
+            #         f.write(pretty_xml)
                     
-                # 4. ตั้งค่า responseMessage เป็น "ok" เพื่อให้โค้ดส่วนล่างทำงาน
-                print(f"[BOT] SUCCESS: Saved config to {filename}")
-                responseMessage = "ok"
-            except Exception as e:
-                print(f"Error saving file: {e}")
-                responseMessage = "Error: Could not save config file"
+            #     # 4. ตั้งค่า responseMessage เป็น "ok" เพื่อให้โค้ดส่วนล่างทำงาน
+            #     print(f"[BOT] SUCCESS: Saved config to {filename}")
+            #     responseMessage = "ok"
+            # except Exception as e:
+            #     print(f"Error saving file: {e}")
+            #     responseMessage = "Error: Could not save config file"
         else:
             responseMessage = "Error: No command or unknown command"
         
@@ -164,27 +166,45 @@ while True:
 
         fileobject = None # ประกาศตัวแปรไว้นอก try
 
-        if command == "showrun" and responseMessage == 'ok':
-            filename = "running_config.txt"
-            fileobject = open(filename, "rb") # "rb"
-            filetype = "text/plain"
-            postData = {
-                "roomId": roomIdToGetMessages,
-                "text": "show running config",
-                "files": (filename, fileobject, filetype),
-            }
-            postData = postData = MultipartEncoder(fields=postData)
-            HTTPHeaders = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
-            "Content-Type": postData.content_type,
-            }
-        # other commands only send text, or no attached file.
-        else:
+        # ตรวจสอบว่า command คือ 'showrun' 
+        # และ responseMessage (ผลลัพธ์จาก ansible_final.showrun()) ไม่ใช่ 'Error: Ansible'
+        if command == "showrun" and responseMessage != 'Error: Ansible':
+            
+            # ถ้าสำเร็จ, responseMessage จะเป็น "ชื่อไฟล์" เช่น "show_run_...txt"
+            filename = responseMessage 
+
+            try:
+                # เปิดไฟล์ที่ ansible สร้างขึ้น
+                fileobject = open(filename, "rb") # "rb"
+                filetype = "text/plain"
+                
+                # เตรียมข้อมูลสำหรับส่งแบบ Multipart (ส่งไฟล์)
+                postData = {
+                    "roomId": roomIdToGetMessages,
+                    "text": f"Here is the requested config: {filename}",
+                    "files": (filename, fileobject, filetype),
+                }
+                postData = MultipartEncoder(fields=postData)
+                HTTPHeaders = {
+                "Authorization": f"Bearer {ACCESS_TOKEN}",
+                "Content-Type": postData.content_type,
+                }
+            except FileNotFoundError:
+                # กรณีฉุกเฉิน: ถ้า ansible บอกว่าสำเร็จ แต่ Python หาไฟล์ไม่เจอ
+                print(f"Error: File {filename} not found!")
+                responseMessage = f"Error: Ansible OK, but file {filename} not found."
+                # ส่งเป็นข้อความธรรมดาแทน (โค้ดจะตกลงไปใน else ข้างล่าง)
+                command = "force_text_error" # บังคับให้ไปที่ else
+
+        # ถ้าเป็น command อื่น 
+        # หรือถ้า 'showrun' ล้มเหลว (responseMessage == 'Error: Ansible')
+        # หรือถ้าหาไฟล์ไม่เจอ (command == "force_text_error")
+        if command != "showrun" or responseMessage == 'Error: Ansible' or command == "force_text_error":
             postData = {"roomId": roomIdToGetMessages, "text": responseMessage}
             postData = json.dumps(postData)
 
             # the Webex Teams HTTP headers, including the Authoriztion and Content-Type
-            HTTPHeaders = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}   
+            HTTPHeaders = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}  
 
         # Post the call to the Webex Teams message API.
         r = requests.post(
