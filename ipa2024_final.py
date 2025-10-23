@@ -15,6 +15,7 @@ import xml.dom.minidom
 from dotenv import load_dotenv
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import netconf_final
+import netmiko_final
 
 #######################################################################################
 # 2. Assign the Webex access token to the variable ACCESS_TOKEN using environment variables.
@@ -30,13 +31,13 @@ if ACCESS_TOKEN is None:
 # 3. Prepare parameters get the latest message for messages API.
 
 # Defines a variable that will hold the roomId
-roomIdToGetMessages = (
-    "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vYmQwODczMTAtNmMyNi0xMWYwLWE1MWMtNzkzZDM2ZjZjM2Zm"
-)
-
 # roomIdToGetMessages = (
-#     "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vZjBmMzdkZTAtYjAxMC0xMWYwLTgxNmEtYmZkNWZkODQzYjgw"
+#     "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vYmQwODczMTAtNmMyNi0xMWYwLWE1MWMtNzkzZDM2ZjZjM2Zm"
 # )
+
+roomIdToGetMessages = (
+    "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vZjBmMzdkZTAtYjAxMC0xMWYwLTgxNmEtYmZkNWZkODQzYjgw"
+)
 
 last_message_id = None
 
@@ -119,7 +120,7 @@ while True:
         elif command == "status":
             responseMessage = netconf_final.status(loopback_name)
         elif command == "gigabit_status":
-            responseMessage = netconf_final.status("GigabitEthernet1")
+            responseMessage = netmiko_final.gigabit_status()
         elif command == "showrun":
             try:
                 # 1. เรียกใช้ connection 'm' จาก netconf_final
