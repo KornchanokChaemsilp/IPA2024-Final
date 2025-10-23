@@ -9,23 +9,30 @@ m = manager.connect(
     hostkey_verify=False
     )
 
-def create():
-    current_status = status()
+def create(studentID):
+    interface_name = f"Loopback{studentID}"
+
+    current_status = status(interface_name)
     if current_status == "up" or current_status == "down":
-        print("Cannot create: Interface loopback 66070001 (already exists)")
-        return "Cannot create: Interface loopback 66070001"
+        print("Cannot create: Interface loopback {studentID}  (already exists)")
+        return "Cannot create: Interface loopback {studentID} "
+    
+    last_three_digits = studentID[-3:]
+    x = int(last_three_digits[0])
+    y = int(last_three_digits[1:])
+    ip_address = f"172.{x}.{y}.1"
     
     netconf_config = f"""
     <config>
       <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
         <interface>
           <Loopback xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="create">
-            <name>66070001</name>
-            <description>Loopback 66070001</description>
+            <name>{studentID}</name>
+            <description>Managed by IPA2024 Bot - 66070001</description>
             <ip>
               <address>
                 <primary>
-                  <address>172.0.1.1</address>
+                  <address>{ip_address}</address>
                   <mask>255.255.255.0</mask>
                 </primary>
               </address>
@@ -41,24 +48,26 @@ def create():
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback 66070001 is created successfully")
-            return "Interface loopback 66070001 is created successfully"
+            print("Interface loopback {studentID}  is created successfully")
+            return "Interface loopback {studentID}  is created successfully"
     except:
-        print("Cannot create: Interface loopback 66070001")
+        print("Cannot create: Interface loopback {studentID} ")
 
 
-def delete():
-    current_status = status()
+def delete(studentID):
+    interface_name = f"Loopback{studentID}"
+
+    current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot delete: Interface loopback 66070001 (does not exist)")
-        return "Cannot delete: Interface loopback 66070001"
+        print("Cannot delete: Interface loopback {studentID} (does not exist)")
+        return "Cannot delete: Interface loopback {studentID} "
     
     netconf_config = f"""
     <config>
       <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
         <interface>
           <Loopback xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="delete">
-            <name>66070001</name>
+            <name>{studentID}</name>
           </Loopback>
         </interface>
       </native>
@@ -70,25 +79,26 @@ def delete():
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback 66070123 is deleted successfully")
-            return "Interface loopback 66070123 is deleted successfully"
+            print("Interface loopback {studentID}  is deleted successfully")
+            return "Interface loopback {studentID}  is deleted successfully"
     except:
         print("Error!")
 
 
-def enable():
+def enable(studentID):
+    interface_name = f"Loopback{studentID}"
 
-    current_status = status()
+    current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot enable: Interface loopback 66070001 (does not exist)")
-        return "Cannot enable: Interface loopback 66070001"
+        print("Cannot enable: Interface loopback {studentID} (does not exist)")
+        return "Cannot enable: Interface loopback {studentID}"
     
     netconf_config = f"""
     <config>
       <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
         <interface>
           <Loopback>
-            <name>66070001</name>
+            <name>{studentID}</name>
             <shutdown xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="delete"/>
           </Loopback>
         </interface>
@@ -101,25 +111,26 @@ def enable():
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback 66070001 is enabled successfully")
-            return "Interface loopback 66070001 is enabled successfully"
+            print("Interface loopback {studentID} is enabled successfully")
+            return "Interface loopback {studentID} is enabled successfully"
     except:
         print("Error!")
 
 
-def disable():
+def disable(studentID):
+    interface_name = f"Loopback{studentID}"
 
-    current_status = status()
+    current_status = status(interface_name)
     if current_status == "no-return":
-        print("Cannot shutdown: Interface loopback 66070001 (does not exist)")
-        return "Cannot shutdown: Interface loopback 66070001"
+        print("Cannot shutdown: Interface loopback {studentID} (does not exist)")
+        return "Cannot shutdown: Interface loopback {studentID}"
     
     netconf_config = f"""
     <config>
       <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
         <interface>
           <Loopback>
-            <name>66070001</name>
+            <name>{studentID}</name>
             <shutdown/>
           </Loopback>
         </interface>
@@ -132,8 +143,8 @@ def disable():
         xml_data = netconf_reply.xml
         print(xml_data)
         if '<ok/>' in xml_data:
-            print("Interface loopback 66070123 is shutdowned successfully")
-            return "Interface loopback 66070123 is shutdowned successfully"
+            print("Interface loopback {studentID} is shutdowned successfully")
+            return "Interface loopback {studentID} is shutdowned successfully"
     except:
         print("Error!")
 
@@ -141,12 +152,12 @@ def netconf_edit_config(netconf_config):
     return m.edit_config(target="running", config=netconf_config)
 
 
-def status():
+def status(interface_name):
     netconf_filter = f"""
     <filter>
       <interfaces-state xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
         <interface>
-          <name>Loopback66070001</name>
+          <name>{interface_name}</name>
         </interface>
       </interfaces-state>
     </filter>
